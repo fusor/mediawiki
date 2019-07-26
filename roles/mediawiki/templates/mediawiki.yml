@@ -1,0 +1,104 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mediawiki
+  namespace: mediawiki
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: mediawiki
+  namespace: mediawiki
+  labels:
+    app: mediawiki
+    service: mediawiki
+spec:
+  replicas: 1
+  selector:
+    app: mediawiki
+    service: mediawiki
+  strategy:
+    type: Rolling
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+  test: false
+  triggers:
+    - type: ConfigChange
+  template:
+    metadata:
+      labels:
+        app: mediawiki
+        service: mediawiki
+    spec:
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - image: docker.io/jmontleon/mediawiki:latest
+          name: mediawiki
+          env:
+          - name: MEDIAWIKI_DB_SCHEMA
+            value: mediawiki
+          - name: MEDIAWIKI_SITE_NAME
+            value: mediawiki
+          - name: MEDIAWIKI_SITE_LANG
+            value: en
+          - name: MEDIAWIKI_ADMIN_USER
+            value: admin
+          - name: MEDIAWIKI_ADMIN_PASS
+            value: dog8code
+          - name: MEDIAWIKI_SITE_SERVER
+            value: {{ sitename }}
+          - name: DB_PORT
+            value: "3306"
+          - name: DB_HOST
+            value: mariadb
+          - name: DB_TYPE
+            value: mysql
+          - name: DB_USER
+            value: passwd
+          - name: DB_PASSWORD
+            value: passwd
+          - name: DB_NAME
+            value: passwd
+          terminationMessagePath: /dev/termination-log
+          workingDir: /
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: mediawiki
+              mountPath: /persistent
+      volumes:
+        - name: mediawiki
+          persistentVolumeClaim:
+            claimName: mediawiki
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mediawiki
+  namespace: mediawiki
+  labels:
+    app: mediawiki
+    service: mediawiki
+spec:
+  ports:
+    - name: port-8080
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: mediawiki
+    service: mediawiki       

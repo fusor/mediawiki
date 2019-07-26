@@ -1,0 +1,42 @@
+- name: "Setup mariadb"
+  k8s:
+    state: "present"
+    definition: "{{ lookup('template', 'mariadb.yml') }}"
+
+- name: "Wait for mariadb to be ready"
+  shell: oc get po -n mediawiki -l app=mariadb | grep -q Running
+  register: result
+  until: result is succeeded
+  retries: 30
+  delay: 10
+
+- name: "Setup Mediawiki route"
+  k8s:
+    state: "present"
+    definition: "{{ lookup('template', 'route.yml') }}"
+
+- name: Find Mediawiki Route
+  k8s_facts:
+    api_version: "route.openshift.io/v1"
+    kind: "Route"
+    namespace: mediawiki
+    name: mediawiki
+  register: route
+
+- set_fact:
+    sitename: "{{ route.resources[0].spec.host }}"
+
+- name: "Setup Mediawiki"
+  k8s:
+    state: "present"
+    definition: "{{ lookup('template', 'mediawiki.yml') }}"
+
+- name: "Wait for mediawiki to be ready"
+  shell: oc get po -n mediawiki -l app=mediawiki | grep -q Running
+  register: result
+  until: result is succeeded
+  retries: 30
+  delay: 10
+
+- debug:
+    msg: "Your mediawiki instance should be available at https://{{ sitename }} in a moment. Username: admin Password: dog8code."
