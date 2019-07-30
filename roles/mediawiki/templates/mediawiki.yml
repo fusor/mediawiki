@@ -42,12 +42,14 @@ metadata:
   namespace: mediawiki
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: mediawiki-role
 subjects:
 - kind: ServiceAccount
-  name: mediawiki-sa
+  name: mediawiki
   namespace: mediawiki
+users:
+- system:serviceaccount:mediawiki:default
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
