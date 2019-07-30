@@ -12,7 +12,7 @@ data:
     sed -i -e "s/wgServer = \".*\"/wgServer = \"https:\/\/$ROUTE\"/g" /persistent/LocalSettings.php
     sleep 900
 ---
-kind: ClusterRole
+kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: mediawiki-role
@@ -29,12 +29,6 @@ rules:
   - list
   - watch
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: mediawiki-sa
-  namespace: mediawiki
----
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
@@ -42,14 +36,12 @@ metadata:
   namespace: mediawiki
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: mediawiki-role
 subjects:
 - kind: ServiceAccount
-  name: mediawiki
+  name: default
   namespace: mediawiki
-users:
-- system:serviceaccount:mediawiki:default
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -103,7 +95,6 @@ spec:
         app: mediawiki
         service: mediawiki
     spec:
-      serviceAccountName: mediawiki-sa
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
