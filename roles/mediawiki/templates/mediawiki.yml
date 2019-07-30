@@ -1,4 +1,38 @@
 ---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: mediawiki-role
+  namespace: mediawiki
+rules:
+- apiGroups:
+  - "*"
+  resources:
+  - namespaces
+  - routes
+  verbs:
+  - get
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mediawiki-sa
+  namespace: mediawiki
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: mediawiki-rb
+  namespace: mediawiki
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mediawiki-role
+subjects:
+- kind: ServiceAccount
+  name: mediawiki-sa
+  namespace: mediawiki
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
