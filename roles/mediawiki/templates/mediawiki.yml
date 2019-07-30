@@ -41,7 +41,7 @@ spec:
           command:
           - /bin/sh
           - -c
-          - sed -i -e "s/wgServer = \".*\"/wgServer = \"https:\/\/$MEDIAWIKI_SITE_SERVER\"/g" /persistent/LocalSettings.php
+          - ROUTE=$(curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/apis/route.openshift.io/v1/namespaces/mediawiki/routes/mediawiki | python -c 'import json,sys;print json.load(sys.stdin)["status"]["ingress"][0]["host"]') && sed -i -e "s/wgServer = \".*\"/wgServer = \"https:\/\/$ROUTE\"/g" /persistent/LocalSettings.php
   test: false
   triggers:
     - type: ConfigChange
