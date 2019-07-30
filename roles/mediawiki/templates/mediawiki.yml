@@ -32,6 +32,16 @@ spec:
       maxUnavailable: 25%
       timeoutSeconds: 600
       updatePeriodSeconds: 1
+      post:
+        failurePolicy: abort
+        execNewPod:
+          containerName: mediawiki 
+          volumes:
+          - mediawiki
+          command:
+          - /bin/sh
+          - -c
+          - sed -i -e "s/wgServer = \".*\"/wgServer = \"https:\/\/$MEDIAWIKI_SITE_SERVER\"/g" /persistent/LocalSettings.php
   test: false
   triggers:
     - type: ConfigChange
