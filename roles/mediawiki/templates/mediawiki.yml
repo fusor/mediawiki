@@ -1,4 +1,48 @@
 ---
+kind: ConfigMap
+metadata:
+  name: post-hook
+  namespace: mediawiki
+apiVersion: v1
+data:
+  post.sh: |
+    #!/bin/bash
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    ROUTE=$(curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/apis/route.openshift.io/v1/namespaces/mediawiki/routes/mediawiki | /usr/bin/python -c 'import json,sys;print json.load(sys.stdin)["status"]["ingress"][0]["host"]')
+    sed -i -e "s/wgServer = \".*\"/wgServer = \"https:\/\/$ROUTE\"/g" /persistent/LocalSettings.php
+    sleep 900
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: mediawiki-role
+  namespace: mediawiki
+rules:
+- apiGroups:
+  - ""
+  - route.openshift.io
+  attributeRestrictions: null
+  resources:
+  - routes
+  verbs:
+  - get
+  - list
+  - watch
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: mediawiki-rb
+  namespace: mediawiki
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mediawiki-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: mediawiki
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -32,6 +76,16 @@ spec:
       maxUnavailable: 25%
       timeoutSeconds: 600
       updatePeriodSeconds: 1
+      post:
+        failurePolicy: ignore
+        execNewPod:
+          containerName: mediawiki 
+          volumes:
+          - mediawiki
+          - post-hook
+          command:
+          - "/bin/bash"
+          - "/post-hook/post.sh"
   test: false
   triggers:
     - type: ConfigChange
@@ -80,10 +134,15 @@ spec:
           volumeMounts:
             - name: mediawiki
               mountPath: /persistent
+            - name: post-hook
+              mountPath: /post-hook
       volumes:
         - name: mediawiki
           persistentVolumeClaim:
             claimName: mediawiki
+        - name: post-hook
+          configMap:
+            name: post-hook
 ---
 apiVersion: v1
 kind: Service
