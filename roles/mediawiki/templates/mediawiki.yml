@@ -104,6 +104,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - image: docker.io/pranavgaikwad/mediawiki:latest
+          imagePullPolicy: Always
           name: mediawiki
           env:
           - name: MEDIAWIKI_DB_SCHEMA
