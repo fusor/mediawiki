@@ -10,9 +10,9 @@ data:
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     ROUTE=$(curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_PORT_443_TCP_PORT/apis/route.openshift.io/v1/namespaces/mediawiki/routes/mediawiki | /usr/bin/python -c 'import json,sys;print json.load(sys.stdin)["status"]["ingress"][0]["host"]')
     sleep 120
-    sed -i -e "s/wgServer = \".*\"/wgServer = \"https:\/\/$ROUTE\"/g" /opt/rh/httpd24/root/home/www-data/httpd/html/LocalSettings.php
+    sed -i -e "s/wgServer = \".*\"/wgServer = \"https:\/\/$ROUTE\"/g" /persistent/LocalSettings.php
     echo "Done changing the URL..."
-    echo "\$wgUsePathInfo = false;" >> /opt/rh/httpd24/root/home/www-data/httpd/html/LocalSettings.php 
+    echo "\$wgUsePathInfo = false;" >> /persistent/LocalSettings.php 
     echo "Done fixing the redirect..."
     sleep 300
 ---
@@ -103,7 +103,7 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       containers:
-        - image: docker.io/jmontleon/mediawiki:latest
+        - image: docker.io/pranavgaikwad/mediawiki:latest
           name: mediawiki
           env:
           - name: MEDIAWIKI_DB_SCHEMA
