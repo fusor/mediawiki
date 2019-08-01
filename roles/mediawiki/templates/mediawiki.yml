@@ -102,7 +102,7 @@ spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       containers:
-        - image: docker.io/pranavgaikwad/mediawiki:latest
+        - image: docker.io/jmontleon/mediawiki:latest
           imagePullPolicy: Always
           name: mediawiki
           env:
